@@ -31,7 +31,7 @@ Option Explicit
 ' DATA G -> Plan list X
 ' ============================================================
 
-Public Sub UpdatePassagePlan()
+Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
 
     Const PLAN_SHEET As String = "Plan list"
     Const DATA_SHEET As String = "DATA"
@@ -200,16 +200,18 @@ Public Sub UpdatePassagePlan()
     wsP.PageSetup.PrintArea = _
         "$A$1:$BN$" & (pagesNeeded * PAGE_ROWS)
 
-    Application.CalculateFull
+    wsP.Calculate
 
     Application.Calculation = oldCalc
     Application.EnableEvents = True
     Application.ScreenUpdating = True
 
-    MsgBox "Done." & vbCrLf & vbCrLf & _
-           "Filled DATA rows: " & dataCount & vbCrLf & _
-           "Pages: " & pagesNeeded, _
-           vbInformation, "Passage Plan"
+    If Not Silent Then
+        MsgBox "Done." & vbCrLf & vbCrLf & _
+               "Filled DATA rows: " & dataCount & vbCrLf & _
+               "Pages: " & pagesNeeded, _
+               vbInformation, "Passage Plan"
+    End If
 
     Exit Sub
 

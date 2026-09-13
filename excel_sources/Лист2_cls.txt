@@ -9,8 +9,8 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     lastRouteRow = Me.Cells(Me.Rows.Count, "B").End(xlUp).Row
     If lastRouteRow < 2 Then lastRouteRow = 2
 
-    Set watchedRange = Me.Range("A2:G" & lastRouteRow + 50)
+    Set watchedRange = Me.Range("A2:G" & lastRouteRow)
     If Intersect(Target, watchedRange) Is Nothing Then Exit Sub
 
-    UpdatePassagePlan
+    UpdatePassagePlan True
 End Sub
