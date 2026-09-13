@@ -57,6 +57,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     Dim oldEvents As Boolean
     Dim oldScreenUpdating As Boolean
     Dim templatePrintArea As String
+    Dim firstPrintArea As String
     Dim printLastCol As String
 
     On Error GoTo ErrHandler
@@ -206,8 +207,11 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     ' --------------------------------------------------------
     printLastCol = "BN"
     If Len(templatePrintArea) > 0 Then
-        printLastCol = ExtractColumnLetters(Split(templatePrintArea, ":")(1))
-        If Len(printLastCol) = 0 Then printLastCol = "BN"
+        firstPrintArea = Split(templatePrintArea, ",")(0)
+        If InStr(1, firstPrintArea, ":", vbTextCompare) > 0 Then
+            printLastCol = ExtractColumnLetters(Split(firstPrintArea, ":")(1))
+            If Len(printLastCol) = 0 Then printLastCol = "BN"
+        End If
     End If
 
     wsP.PageSetup.PrintArea = _
