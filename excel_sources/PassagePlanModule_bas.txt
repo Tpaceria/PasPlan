@@ -203,7 +203,6 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     wsP.Calculate
 
     Application.Calculation = oldCalc
-    Application.EnableEvents = True
     Application.ScreenUpdating = True
 
     If Not Silent Then
@@ -212,6 +211,8 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
                "Pages: " & pagesNeeded, _
                vbInformation, "Passage Plan"
     End If
+
+    Application.EnableEvents = True
 
     Exit Sub
 

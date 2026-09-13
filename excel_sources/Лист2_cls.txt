@@ -12,5 +12,5 @@ Private Sub Worksheet_Change(ByVal Target As Range)
     Set watchedRange = Me.Range("A2:G" & lastRouteRow)
     If Intersect(Target, watchedRange) Is Nothing Then Exit Sub
 
-    UpdatePassagePlan True
+    PassagePlanModule.UpdatePassagePlan True
 End Sub
