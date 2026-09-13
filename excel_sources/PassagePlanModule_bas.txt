@@ -59,6 +59,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     Dim templatePrintArea As String
     Dim printLastCol As String
     Dim templateArea As Range
+    Dim areaMaxCol As Long
 
     On Error GoTo ErrHandler
 
@@ -207,10 +208,14 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     ' --------------------------------------------------------
     printLastCol = "BN"
     If Len(templatePrintArea) > 0 Then
-        Set templateArea = wsP.Range(templatePrintArea).Areas(1)
-        If Not templateArea Is Nothing Then
-            printLastCol = ExtractColumnLetters( _
-                templateArea.Cells(1, templateArea.Columns.Count).Address(False, False))
+        areaMaxCol = 0
+        For Each templateArea In wsP.Range(templatePrintArea).Areas
+            areaMaxCol = Application.Max(areaMaxCol, _
+                templateArea.Column + templateArea.Columns.Count - 1)
+        Next templateArea
+
+        If areaMaxCol > 0 Then
+            printLastCol = ExtractColumnLetters(wsP.Cells(1, areaMaxCol).Address(False, False))
             If Len(printLastCol) = 0 Then printLastCol = "BN"
         End If
     End If
