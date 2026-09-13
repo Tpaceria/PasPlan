@@ -63,6 +63,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
 
     Set wsP = ThisWorkbook.Worksheets(PLAN_SHEET)
     Set wsD = ThisWorkbook.Worksheets(DATA_SHEET)
+    templatePrintArea = wsP.PageSetup.PrintArea
 
     oldCalc = Application.Calculation
     oldEvents = Application.EnableEvents
@@ -203,7 +204,6 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     ' --------------------------------------------------------
     ' 7. PRINT AREA
     ' --------------------------------------------------------
-    templatePrintArea = wsP.PageSetup.PrintArea
     printLastCol = "BN"
     If Len(templatePrintArea) > 0 Then
         printLastCol = ExtractColumnLetters(Split(templatePrintArea, ":")(1))
