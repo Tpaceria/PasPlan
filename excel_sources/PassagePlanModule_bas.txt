@@ -142,10 +142,10 @@ Public Sub UpdatePassagePlan()
     ' --------------------------------------------------------
     ' 5. WRITE DATA
     ' --------------------------------------------------------
-    ' Since DATA column A determines the record number,
+    ' Since DATA column B (Latitude) determines active route records,
     ' rows are transferred sequentially.
     '
-    ' If A is empty, the row is skipped.
+    ' If B is empty/non-real, the row is skipped.
     ' --------------------------------------------------------
     Dim recordIndex As Long
     recordIndex = 0
@@ -279,7 +279,7 @@ Private Function HasRealValue(ByVal cell As Range) As Boolean
     v = cell.Value2
 
     If IsError(v) Then
-        HasRealValue = True
+        HasRealValue = False
         Exit Function
     End If
 
