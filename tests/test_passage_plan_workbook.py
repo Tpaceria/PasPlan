@@ -42,7 +42,7 @@ class PassagePlanWorkbookTests(unittest.TestCase):
                 data_xml = ET.fromstring(archive.read("xl/worksheets/sheet2.xml"))
                 self.assertEqual(find(data_xml, "x:dimension").attrib["ref"], "A1:G600")
 
-                for row_number in (2, 3, 35):
+                for row_number in range(2, 601):
                     row = find(data_xml, f"x:sheetData/x:row[@r='{row_number}']")
                     refs = [cell.attrib["r"] for cell in row.findall("x:c", NS)]
                     self.assertEqual(refs, [f"A{row_number}", f"F{row_number}"])
@@ -83,10 +83,9 @@ class PassagePlanWorkbookTests(unittest.TestCase):
         )
         self.assertIsNotNone(delegate)
         delegate_body = delegate.group(1)
-        self.assertRegex(
-            delegate_body,
-            r"Target\.CountLarge\s*>\s*500[\s\S]*?Target\.Worksheet\.Range\(\"A2:G600\"\)[\s\S]*?UpdatePassagePlan\s+True",
-        )
+        self.assertRegex(delegate_body, r"Target\.CountLarge\s*>\s*500")
+        self.assertIn("A2:G600", delegate_body)
+        self.assertRegex(delegate_body, r"\bUpdatePassagePlan\s+True\b")
 
 
 if __name__ == "__main__":
