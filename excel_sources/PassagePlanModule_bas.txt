@@ -8,7 +8,8 @@ Option Explicit
 ' EXACT RULE:
 ' Number of pages = CEILING(number of real DATA rows / 35)
 '
-' DATA rows are counted by COLUMN A only, starting at row 2.
+' DATA rows are counted by ROUTE COLUMN B (Latitude), starting at row 2.
+' HasRealValue normalizes non-breaking spaces (CHAR(160)) to treat placeholders as empty.
 ' Therefore:
 ' 1-35   -> 1 page
 ' 36-70  -> 2 pages
@@ -126,9 +127,7 @@ Public Sub UpdatePassagePlan()
 
         ' Set page number.
         ' C5 is the page-number cell in the template.
-        On Error Resume Next
-        wsP.Range("C" & destStart + 4).Value = p
-        On Error GoTo ErrHandler
+        wsP.Range("C" & CStr(destStart + 4)).Value = p
 
         ' Copy only objects that belong to the first page.
         CopyTemplateShapes wsP, destStart
