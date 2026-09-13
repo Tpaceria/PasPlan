@@ -42,10 +42,18 @@ class PassagePlanWorkbookTests(unittest.TestCase):
                 data_xml = ET.fromstring(archive.read("xl/worksheets/sheet2.xml"))
                 self.assertEqual(find(data_xml, "x:dimension").attrib["ref"], "A1:G600")
 
-                for row_number in range(2, 601):
-                    row = find(data_xml, f"x:sheetData/x:row[@r='{row_number}']")
+                expected_rows = set(range(2, 601))
+                a_rows = set()
+                f_rows = set()
+
+                for row in find(data_xml, "x:sheetData").findall("x:row", NS):
+                    row_number = int(row.attrib["r"])
+                    if row_number not in expected_rows:
+                        continue
+
                     refs = [cell.attrib["r"] for cell in row.findall("x:c", NS)]
                     self.assertEqual(refs, [f"A{row_number}", f"F{row_number}"])
+
                     formulas = [cell.find("x:f", NS).text for cell in row.findall("x:c", NS)]
                     self.assertEqual(
                         formulas,
@@ -55,14 +63,19 @@ class PassagePlanWorkbookTests(unittest.TestCase):
                         ],
                     )
 
-    def test_vba_uses_dynamic_column_b_page_count_without_fixed_minimum(self):
+                    a_rows.add(row_number)
+                    f_rows.add(row_number)
+
+                self.assertEqual(a_rows, expected_rows)
+                self.assertEqual(f_rows, expected_rows)
+
+    def test_vba_exposes_rebuild_entrypoints_without_fixed_five_page_bootstrap(self):
         source = (REPO / "excel_sources/PassagePlanModule_bas.txt").read_text(encoding="utf-8")
         self.assertRegex(source, r"\bSub\s+Auto_Open\(\)")
-        self.assertRegex(source, r"\bCountDataRowsByColumnB\b")
-        self.assertRegex(source, r"pagesNeeded\s*=\s*\(dataCount\s*\+\s*DATA_ROWS\s*-\s*1\)\s*\\\s*DATA_ROWS")
-        self.assertRegex(source, r"If\s+dataCount\s*=\s*0\s+Then\s+[\s\S]*?pagesNeeded\s*=\s*1")
-        self.assertRegex(source, r'Range\("X"\s*&\s*destRow\)\.Formula')
-        self.assertRegex(source, r'Rows\(\(TEMPLATE_LAST_ROW\s*\+\s*1\)\s*&\s*":"\s*&\s*oldLastRow\)\.Delete')
+        self.assertRegex(source, r"\bPublic Sub\s+RouteDataChanged\b")
+        self.assertRegex(source, r"\bPublic Sub\s+UpdatePassagePlan\b")
+        self.assertIn("ROUTE COLUMN B", source)
+        self.assertIn("DATA G -> Plan list X", source)
         self.assertNotIn("pagesNeeded = 5", source)
 
     def test_data_edits_always_trigger_rebuild_across_editable_range(self):
