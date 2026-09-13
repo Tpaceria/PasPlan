@@ -28,4 +28,4 @@ Updated file: `NEW_FINAL_LOGO_EXACT_5_05x1_00cm.xlsm` and copy `PasPlan_NORDLAND
 - `PassagePlanModule_bas.txt` row-counting logic is updated to use route column `B` and normalize `CHAR(160)` as empty.
 - `PassagePlanModule_bas.txt` transfer formulas are wrapped with `IFERROR` to prevent DATA formula errors from surfacing in PLAN output rows.
 - `Лист2_cls.txt` limits auto-refresh scope to only populated route rows and skips very large edits for better data-entry performance.
-- `PassagePlanModule_bas.txt` supports silent event-driven refreshes and recalculates only PLAN scope (`wsP.Calculate`) instead of full Excel recalculation.
+- `PassagePlanModule_bas.txt` recalculates only PLAN scope (`wsP.Calculate`) instead of full Excel recalculation, and restores `EnableEvents` to its prior state after execution.

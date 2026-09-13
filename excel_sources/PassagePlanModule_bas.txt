@@ -54,6 +54,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     Dim destRow As Long
 
     Dim oldCalc As XlCalculation
+    Dim oldEvents As Boolean
 
     On Error GoTo ErrHandler
 
@@ -61,6 +62,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     Set wsD = ThisWorkbook.Worksheets(DATA_SHEET)
 
     oldCalc = Application.Calculation
+    oldEvents = Application.EnableEvents
 
     Application.ScreenUpdating = False
     Application.EnableEvents = False
@@ -204,22 +206,14 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
 
     Application.Calculation = oldCalc
     Application.ScreenUpdating = True
-
-    If Not Silent Then
-        MsgBox "Done." & vbCrLf & vbCrLf & _
-               "Filled DATA rows: " & dataCount & vbCrLf & _
-               "Pages: " & pagesNeeded, _
-               vbInformation, "Passage Plan"
-    End If
-
-    Application.EnableEvents = True
+    Application.EnableEvents = oldEvents
 
     Exit Sub
 
 ErrHandler:
 
     Application.Calculation = oldCalc
-    Application.EnableEvents = True
+    Application.EnableEvents = oldEvents
     Application.ScreenUpdating = True
     Application.CutCopyMode = False
 
