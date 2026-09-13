@@ -5,7 +5,7 @@ Updated file: `NEW_FINAL_LOGO_EXACT_5_05x1_00cm.xlsm` and copy `PasPlan_NORDLAND
 ## DATA sheet updates
 
 - Headers A1:G1 set to: Remarks, Latitude, Longitude, Distance, Course, Distance to go, Min Depth.
-- Empty remarks cells in column A now use `=IF(Bn="","",CHAR(160))` so VBA row-count logic (column A based) tracks active route rows.
+- Empty remarks cells in column A now use `=IF(Bn="","",CHAR(160))` for compatibility with the embedded workbook macro.
 - Column F now uses cumulative formula `=IF(Dn="","",SUM($D$2:Dn))` for distance-to-go recalculation.
 - Existing route rows where D looked like Course and E looked like Distance were normalized (D=Distance, E=Course).
 
@@ -19,3 +19,10 @@ Updated file: `NEW_FINAL_LOGO_EXACT_5_05x1_00cm.xlsm` and copy `PasPlan_NORDLAND
 - DATA max row: 600
 - PLAN max row: 230
 - Sample formulas: DATA!A3==IF(B3="","",CHAR(160)), DATA!F3==IF(D3="","",SUM($D$2:D3)), PLAN!X12==IF(DATA!G3="","",DATA!G3)
+
+## Extracted VBA review notes
+
+- `Лист2_cls.txt` reflects the event trigger range `A:G` so Min Depth edits also trigger refresh.
+- `PassagePlanModule_bas.txt` includes `DATA!G -> PLAN!X` mapping and clears `X` in `ClearMappedCells`.
+- `PassagePlanModule_bas.txt` message boxes use readable English strings (`Done/Error`) to avoid mojibake.
+- `PassagePlanModule_bas.txt` row-counting logic is updated to use route column `B` and normalize `CHAR(160)` as empty.

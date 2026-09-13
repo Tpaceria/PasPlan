@@ -27,6 +27,7 @@ Option Explicit
 ' DATA D -> Plan list T
 ' DATA E -> Plan list Q
 ' DATA F -> Plan list AB
+' DATA G -> Plan list X
 ' ============================================================
 
 Public Sub UpdatePassagePlan()
@@ -68,14 +69,14 @@ Public Sub UpdatePassagePlan()
     ' 1. COUNT DATA ROWS
     '
     ' IMPORTANT:
-    ' Column A is the master column.
-    ' A2 = record 1
-    ' A3 = record 2
+    ' Column B (Latitude) is the master column.
+    ' B2 = record 1
+    ' B3 = record 2
     ' etc.
     '
     ' Empty cells/formulas returning "" are NOT counted.
     ' --------------------------------------------------------
-    dataCount = CountDataRowsByColumnA(wsD)
+    dataCount = CountDataRowsByRouteColumns(wsD)
 
     ' Calculate pages.
     If dataCount = 0 Then
@@ -150,9 +151,9 @@ Public Sub UpdatePassagePlan()
     Dim recordIndex As Long
     recordIndex = 0
 
-    For dataRow = 2 To LastDataRowInA(wsD)
+    For dataRow = 2 To LastDataRowByRouteColumns(wsD)
 
-        If HasRealValue(wsD.Cells(dataRow, 1)) Then
+        If HasRealValue(wsD.Cells(dataRow, 2)) Then
 
             destRow = (recordIndex \ DATA_ROWS) * PAGE_ROWS _
                       + FIRST_DATA_ROW _
@@ -175,6 +176,9 @@ Public Sub UpdatePassagePlan()
 
             wsP.Range("AB" & destRow).Formula = _
                 "=IF(DATA!F" & dataRow & "="""","""",DATA!F" & dataRow & ")"
+
+            wsP.Range("X" & destRow).Formula = _
+                "=IF(DATA!G" & dataRow & "="""","""",DATA!G" & dataRow & ")"
 
             recordIndex = recordIndex + 1
 
@@ -203,9 +207,9 @@ Public Sub UpdatePassagePlan()
     Application.EnableEvents = True
     Application.ScreenUpdating = True
 
-    MsgBox "Р“РѕС‚РѕРІРѕ." & vbCrLf & vbCrLf & _
-           "Р—Р°РїРѕР»РЅРµРЅРЅС‹С… СЃС‚СЂРѕРє DATA: " & dataCount & vbCrLf & _
-           "РЎС‚СЂР°РЅРёС†: " & pagesNeeded, _
+    MsgBox "Done." & vbCrLf & vbCrLf & _
+           "Filled DATA rows: " & dataCount & vbCrLf & _
+           "Pages: " & pagesNeeded, _
            vbInformation, "Passage Plan"
 
     Exit Sub
@@ -217,49 +221,49 @@ ErrHandler:
     Application.ScreenUpdating = True
     Application.CutCopyMode = False
 
-    MsgBox "РћС€РёР±РєР°: " & Err.Description, _
+    MsgBox "Error: " & Err.Description, _
            vbExclamation, "Passage Plan"
 
 End Sub
 
 
 ' ============================================================
-' COUNT DATA ROWS USING COLUMN A
+' COUNT DATA ROWS USING ROUTE COLUMNS
 ' ============================================================
-Private Function CountDataRowsByColumnA(ByVal ws As Worksheet) As Long
+Private Function CountDataRowsByRouteColumns(ByVal ws As Worksheet) As Long
 
     Dim lastRow As Long
     Dim r As Long
     Dim n As Long
 
-    lastRow = LastDataRowInA(ws)
+    lastRow = LastDataRowByRouteColumns(ws)
 
     For r = 2 To lastRow
 
-        If HasRealValue(ws.Cells(r, 1)) Then
+        If HasRealValue(ws.Cells(r, 2)) Then
             n = n + 1
         End If
 
     Next r
 
-    CountDataRowsByColumnA = n
+    CountDataRowsByRouteColumns = n
 
 End Function
 
 
 ' ============================================================
-' LAST DATA ROW IN COLUMN A
+' LAST DATA ROW BY ROUTE COLUMNS
 ' ============================================================
-Private Function LastDataRowInA(ByVal ws As Worksheet) As Long
+Private Function LastDataRowByRouteColumns(ByVal ws As Worksheet) As Long
 
     Dim r As Long
 
-    r = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    r = ws.Cells(ws.Rows.Count, "B").End(xlUp).Row
 
     If r < 2 Then
-        LastDataRowInA = 1
+        LastDataRowByRouteColumns = 1
     Else
-        LastDataRowInA = r
+        LastDataRowByRouteColumns = r
     End If
 
 End Function
@@ -271,6 +275,7 @@ End Function
 Private Function HasRealValue(ByVal cell As Range) As Boolean
 
     Dim v As Variant
+    Dim s As String
 
     v = cell.Value2
 
@@ -279,7 +284,10 @@ Private Function HasRealValue(ByVal cell As Range) As Boolean
         Exit Function
     End If
 
-    If Len(Trim$(CStr(v))) > 0 Then
+    s = CStr(v)
+    s = Replace$(s, Chr$(160), " ")
+
+    If Len(Trim$(s)) > 0 Then
         HasRealValue = True
     Else
         HasRealValue = False
@@ -475,6 +483,7 @@ Private Sub ClearMappedCells(ByVal ws As Worksheet, _
             ws.Range("L" & targetRow).ClearContents
             ws.Range("Q" & targetRow).ClearContents
             ws.Range("T" & targetRow).ClearContents
+            ws.Range("X" & targetRow).ClearContents
             ws.Range("AB" & targetRow).ClearContents
             ws.Range("AT" & targetRow).ClearContents
 
