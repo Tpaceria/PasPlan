@@ -56,6 +56,8 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     Dim oldCalc As XlCalculation
     Dim oldEvents As Boolean
     Dim oldScreenUpdating As Boolean
+    Dim templatePrintArea As String
+    Dim printLastCol As String
 
     On Error GoTo ErrHandler
 
@@ -201,8 +203,15 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     ' --------------------------------------------------------
     ' 7. PRINT AREA
     ' --------------------------------------------------------
+    templatePrintArea = wsP.PageSetup.PrintArea
+    printLastCol = "BN"
+    If Len(templatePrintArea) > 0 Then
+        printLastCol = ExtractColumnLetters(Split(templatePrintArea, ":")(1))
+        If Len(printLastCol) = 0 Then printLastCol = "BN"
+    End If
+
     wsP.PageSetup.PrintArea = _
-        "$A$1:$BN$" & (pagesNeeded * PAGE_ROWS)
+        "$A$1:$" & printLastCol & "$" & (pagesNeeded * PAGE_ROWS)
 
     wsP.Calculate
 
@@ -223,6 +232,24 @@ ErrHandler:
            vbExclamation, "Passage Plan"
 
 End Sub
+
+
+Private Function ExtractColumnLetters(ByVal cellRef As String) As String
+
+    Dim i As Long
+    Dim ch As String
+    Dim s As String
+
+    For i = 1 To Len(cellRef)
+        ch = Mid$(cellRef, i, 1)
+        If ch Like "[A-Za-z]" Then
+            s = s & ch
+        End If
+    Next i
+
+    ExtractColumnLetters = UCase$(s)
+
+End Function
 
 
 ' ============================================================
