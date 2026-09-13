@@ -57,9 +57,11 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     Dim oldEvents As Boolean
     Dim oldScreenUpdating As Boolean
     Dim templatePrintArea As String
-    Dim printLastCol As String
     Dim templateArea As Range
-    Dim areaMaxCol As Long
+    Dim rebuiltPrintArea As String
+    Dim areaFirstCol As String
+    Dim areaLastCol As String
+    Dim listSeparator As String
 
     On Error GoTo ErrHandler
 
@@ -206,22 +208,30 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     ' --------------------------------------------------------
     ' 7. PRINT AREA
     ' --------------------------------------------------------
-    printLastCol = "BN"
-    If Len(templatePrintArea) > 0 Then
-        areaMaxCol = 0
-        For Each templateArea In wsP.Range(templatePrintArea).Areas
-            areaMaxCol = Application.Max(areaMaxCol, _
-                templateArea.Column + templateArea.Columns.Count - 1)
-        Next templateArea
+    rebuiltPrintArea = ""
+    listSeparator = Application.International(xlListSeparator)
 
-        If areaMaxCol > 0 Then
-            printLastCol = ExtractColumnLetters(wsP.Cells(1, areaMaxCol).Address(False, False))
-            If Len(printLastCol) = 0 Then printLastCol = "BN"
-        End If
+    If Len(templatePrintArea) > 0 Then
+        For Each templateArea In wsP.Range(templatePrintArea).Areas
+            areaFirstCol = ExtractColumnLetters(templateArea.Cells(1, 1).Address(False, False))
+            areaLastCol = ExtractColumnLetters( _
+                templateArea.Cells(1, templateArea.Columns.Count).Address(False, False))
+
+            If Len(areaFirstCol) > 0 And Len(areaLastCol) > 0 Then
+                If Len(rebuiltPrintArea) > 0 Then
+                    rebuiltPrintArea = rebuiltPrintArea & listSeparator
+                End If
+                rebuiltPrintArea = rebuiltPrintArea & _
+                    "$" & areaFirstCol & "$1:$" & areaLastCol & "$" & (pagesNeeded * PAGE_ROWS)
+            End If
+        Next templateArea
     End If
 
-    wsP.PageSetup.PrintArea = _
-        "$A$1:$" & printLastCol & "$" & (pagesNeeded * PAGE_ROWS)
+    If Len(rebuiltPrintArea) = 0 Then
+        rebuiltPrintArea = "$A$1:$BN$" & (pagesNeeded * PAGE_ROWS)
+    End If
+
+    wsP.PageSetup.PrintArea = rebuiltPrintArea
 
     wsP.Calculate
 

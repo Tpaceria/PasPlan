@@ -31,4 +31,5 @@ Updated file: `NEW_FINAL_LOGO_EXACT_5_05x1_00cm.xlsm` and copy `PasPlan_NORDLAND
 - `PassagePlanModule_bas.txt` recalculates only PLAN scope (`wsP.Calculate`) instead of full Excel recalculation, and restores `EnableEvents` to its prior state after execution.
 - `Лист2_cls.txt` invokes the refresh macro via `Application.Run` scoped to `ThisWorkbook` to avoid cross-workbook dispatch ambiguity.
 - `Лист2_cls.txt` escapes apostrophes in workbook names before building the `Application.Run` target.
-- `PassagePlanModule_bas.txt` derives print-area last column from template print settings instead of hard-coding `BN`.
+- `Лист2_cls.txt` uses `ThisWorkbook.FullName` for unambiguous macro dispatch when similarly named workbooks are open.
+- `PassagePlanModule_bas.txt` rebuilds print areas from each template area (preserving disjoint layout) instead of collapsing to one contiguous block.
