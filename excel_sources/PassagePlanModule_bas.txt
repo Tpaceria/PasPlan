@@ -62,6 +62,8 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     Dim areaFirstCol As String
     Dim areaLastCol As String
     Dim listSeparator As String
+    Dim areaTopRow As Long
+    Dim areaBottomRow As Long
 
     On Error GoTo ErrHandler
 
@@ -216,13 +218,15 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
             areaFirstCol = ExtractColumnLetters(templateArea.Cells(1, 1).Address(False, False))
             areaLastCol = ExtractColumnLetters( _
                 templateArea.Cells(1, templateArea.Columns.Count).Address(False, False))
+            areaTopRow = templateArea.Row
+            areaBottomRow = areaTopRow + pagesNeeded * PAGE_ROWS - 1
 
             If Len(areaFirstCol) > 0 And Len(areaLastCol) > 0 Then
                 If Len(rebuiltPrintArea) > 0 Then
                     rebuiltPrintArea = rebuiltPrintArea & listSeparator
                 End If
                 rebuiltPrintArea = rebuiltPrintArea & _
-                    "$" & areaFirstCol & "$1:$" & areaLastCol & "$" & (pagesNeeded * PAGE_ROWS)
+                    "$" & areaFirstCol & "$" & areaTopRow & ":$" & areaLastCol & "$" & areaBottomRow
             End If
         Next templateArea
     End If
@@ -248,8 +252,10 @@ ErrHandler:
     Application.ScreenUpdating = oldScreenUpdating
     Application.CutCopyMode = False
 
-    MsgBox "Error: " & Err.Description, _
-           vbExclamation, "Passage Plan"
+    If Not Silent Then
+        MsgBox "Error: " & Err.Description, _
+               vbExclamation, "Passage Plan"
+    End If
 
 End Sub
 
