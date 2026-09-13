@@ -207,7 +207,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     ' --------------------------------------------------------
     printLastCol = "BN"
     If Len(templatePrintArea) > 0 Then
-        firstPrintArea = Split(templatePrintArea, ",")(0)
+        firstPrintArea = Split(templatePrintArea, Application.International(xlListSeparator))(0)
         If InStr(1, firstPrintArea, ":", vbTextCompare) > 0 Then
             printLastCol = ExtractColumnLetters(Split(firstPrintArea, ":")(1))
             If Len(printLastCol) = 0 Then printLastCol = "BN"
