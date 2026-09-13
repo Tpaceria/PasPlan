@@ -256,30 +256,12 @@ End Function
 Private Sub UnmergeBelowRow(ByVal ws As Worksheet, _
                             ByVal firstPageLastRow As Long)
 
-    Dim i As Long
-    Dim area As Range
-    Dim topRow As Long
-    Dim bottomRow As Long
+    Dim lastRow As Long
 
-    For i = ws.UsedRange.MergeAreas.Count To 1 Step -1
+    lastRow = LastPlanRow(ws)
+    If lastRow <= firstPageLastRow Then Exit Sub
 
-        Set area = Nothing
-
-        On Error Resume Next
-        Set area = ws.UsedRange.MergeAreas(i)
-        On Error GoTo 0
-
-        If Not area Is Nothing Then
-            topRow = area.Row
-            bottomRow = area.Row + area.Rows.Count - 1
-
-            If topRow > firstPageLastRow Or _
-               bottomRow > firstPageLastRow Then
-                area.UnMerge
-            End If
-        End If
-
-    Next i
+    ws.Rows((firstPageLastRow + 1) & ":" & lastRow).UnMerge
 
 End Sub
 

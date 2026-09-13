@@ -68,10 +68,25 @@ class PassagePlanWorkbookTests(unittest.TestCase):
     def test_data_edits_always_trigger_rebuild_across_editable_range(self):
         sheet_source = (REPO / "excel_sources/Лист2_cls.txt").read_text(encoding="utf-8")
         module_source = (REPO / "excel_sources/PassagePlanModule_bas.txt").read_text(encoding="utf-8")
-        self.assertRegex(sheet_source, r"\bRouteDataChanged\s+Target\b")
-        self.assertRegex(module_source, r"Target\.CountLarge\s*>\s*500")
-        self.assertRegex(module_source, r'Target\.Worksheet\.Range\("A2:G600"\)')
-        self.assertRegex(module_source, r"\bUpdatePassagePlan\s+True\b")
+        handler = re.search(
+            r"Private Sub Worksheet_Change\(ByVal Target As Range\)\s*(.*?)\s*End Sub",
+            sheet_source,
+            re.S,
+        )
+        self.assertIsNotNone(handler)
+        self.assertEqual(handler.group(1).strip(), "RouteDataChanged Target")
+
+        delegate = re.search(
+            r"Public Sub RouteDataChanged\(ByVal Target As Range\)\s*(.*?)\s*End Sub",
+            module_source,
+            re.S,
+        )
+        self.assertIsNotNone(delegate)
+        delegate_body = delegate.group(1)
+        self.assertRegex(
+            delegate_body,
+            r"Target\.CountLarge\s*>\s*500[\s\S]*?Target\.Worksheet\.Range\(\"A2:G600\"\)[\s\S]*?UpdatePassagePlan\s+True",
+        )
 
 
 if __name__ == "__main__":
