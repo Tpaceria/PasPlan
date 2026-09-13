@@ -219,7 +219,8 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
             areaLastCol = ExtractColumnLetters( _
                 templateArea.Cells(1, templateArea.Columns.Count).Address(False, False))
             areaTopRow = templateArea.Row
-            areaBottomRow = areaTopRow + pagesNeeded * PAGE_ROWS - 1
+            areaBottomRow = areaTopRow + templateArea.Rows.Count - 1 + _
+                (pagesNeeded - 1) * PAGE_ROWS
 
             If Len(areaFirstCol) > 0 And Len(areaLastCol) > 0 Then
                 If Len(rebuiltPrintArea) > 0 Then
