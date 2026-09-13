@@ -33,6 +33,17 @@ Sub Auto_Open()
 End Sub
 
 
+Public Sub RouteDataChanged(ByVal Target As Range)
+
+    If Target Is Nothing Then Exit Sub
+    If Target.CountLarge > 500 Then Exit Sub
+    If Intersect(Target, Target.Worksheet.Range("A2:G600")) Is Nothing Then Exit Sub
+
+    UpdatePassagePlan True
+
+End Sub
+
+
 Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
 
     Const PLAN_SHEET As String = "Plan list"

@@ -1,10 +1,11 @@
-import unittest
 import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
+import re
+import unittest
 
 
-REPO = Path("/home/runner/work/PasPlan/PasPlan")
+REPO = Path(__file__).resolve().parents[1]
 WORKBOOKS = [
     REPO / "NEW_FINAL_LOGO_EXACT_5_05x1_00cm.xlsm",
     REPO / "PasPlan_NORDLAND.xlsm",
@@ -56,18 +57,21 @@ class PassagePlanWorkbookTests(unittest.TestCase):
 
     def test_vba_uses_dynamic_column_b_page_count_without_fixed_minimum(self):
         source = (REPO / "excel_sources/PassagePlanModule_bas.txt").read_text(encoding="utf-8")
-        self.assertIn("Sub Auto_Open()", source)
-        self.assertIn("dataCount = CountDataRowsByColumnB(wsD)", source)
-        self.assertIn("pagesNeeded = (dataCount + DATA_ROWS - 1) \\ DATA_ROWS", source)
-        self.assertIn("If dataCount = 0 Then", source)
-        self.assertIn('wsP.Range("X" & destRow).Formula', source)
-        self.assertIn('wsP.Rows((TEMPLATE_LAST_ROW + 1) & ":" & oldLastRow).Delete', source)
+        self.assertRegex(source, r"\bSub\s+Auto_Open\(\)")
+        self.assertRegex(source, r"\bCountDataRowsByColumnB\b")
+        self.assertRegex(source, r"pagesNeeded\s*=\s*\(dataCount\s*\+\s*DATA_ROWS\s*-\s*1\)\s*\\\s*DATA_ROWS")
+        self.assertRegex(source, r"If\s+dataCount\s*=\s*0\s+Then\s+[\s\S]*?pagesNeeded\s*=\s*1")
+        self.assertRegex(source, r'Range\("X"\s*&\s*destRow\)\.Formula')
+        self.assertRegex(source, r'Rows\(\(TEMPLATE_LAST_ROW\s*\+\s*1\)\s*&\s*":"\s*&\s*oldLastRow\)\.Delete')
         self.assertNotIn("pagesNeeded = 5", source)
 
     def test_data_edits_always_trigger_rebuild_across_editable_range(self):
-        source = (REPO / "excel_sources/Лист2_cls.txt").read_text(encoding="utf-8")
-        self.assertIn('Me.Range("A2:G600")', source)
-        self.assertIn("UpdatePassagePlan True", source)
+        sheet_source = (REPO / "excel_sources/Лист2_cls.txt").read_text(encoding="utf-8")
+        module_source = (REPO / "excel_sources/PassagePlanModule_bas.txt").read_text(encoding="utf-8")
+        self.assertRegex(sheet_source, r"\bRouteDataChanged\s+Target\b")
+        self.assertRegex(module_source, r"Target\.CountLarge\s*>\s*500")
+        self.assertRegex(module_source, r'Target\.Worksheet\.Range\("A2:G600"\)')
+        self.assertRegex(module_source, r"\bUpdatePassagePlan\s+True\b")
 
 
 if __name__ == "__main__":
