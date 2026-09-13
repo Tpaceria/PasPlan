@@ -55,6 +55,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
 
     Dim oldCalc As XlCalculation
     Dim oldEvents As Boolean
+    Dim oldScreenUpdating As Boolean
 
     On Error GoTo ErrHandler
 
@@ -63,6 +64,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
 
     oldCalc = Application.Calculation
     oldEvents = Application.EnableEvents
+    oldScreenUpdating = Application.ScreenUpdating
 
     Application.ScreenUpdating = False
     Application.EnableEvents = False
@@ -205,7 +207,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     wsP.Calculate
 
     Application.Calculation = oldCalc
-    Application.ScreenUpdating = True
+    Application.ScreenUpdating = oldScreenUpdating
     Application.EnableEvents = oldEvents
 
     Exit Sub
@@ -214,7 +216,7 @@ ErrHandler:
 
     Application.Calculation = oldCalc
     Application.EnableEvents = oldEvents
-    Application.ScreenUpdating = True
+    Application.ScreenUpdating = oldScreenUpdating
     Application.CutCopyMode = False
 
     MsgBox "Error: " & Err.Description, _
@@ -323,34 +325,7 @@ End Function
 Private Sub UnmergeBelowRow(ByVal ws As Worksheet, _
                             ByVal firstPageLastRow As Long)
 
-    Dim i As Long
-    Dim area As Range
-    Dim topRow As Long
-    Dim bottomRow As Long
-
-    For i = ws.UsedRange.MergeAreas.Count To 1 Step -1
-
-        Set area = Nothing
-
-        On Error Resume Next
-        Set area = ws.UsedRange.MergeAreas(i)
-        On Error GoTo 0
-
-        If Not area Is Nothing Then
-
-            topRow = area.Row
-            bottomRow = area.Row + area.Rows.Count - 1
-
-            If topRow > firstPageLastRow Or _
-               bottomRow > firstPageLastRow Then
-
-                area.UnMerge
-
-            End If
-
-        End If
-
-    Next i
+    ws.Rows((firstPageLastRow + 1) & ":" & ws.Rows.Count).UnMerge
 
 End Sub
 
@@ -392,6 +367,7 @@ Private Sub CopyTemplateShapes(ByVal ws As Worksheet, _
 
     Dim shp As Shape
     Dim newShp As Shape
+    Dim pastedShapes As ShapeRange
 
     Dim rowOffset As Double
 
@@ -409,7 +385,10 @@ Private Sub CopyTemplateShapes(ByVal ws As Worksheet, _
             On Error Resume Next
 
             shp.Copy
-            Set newShp = ws.Shapes.Paste
+            Set pastedShapes = ws.Shapes.Paste
+            If Not pastedShapes Is Nothing Then
+                Set newShp = pastedShapes.Item(1)
+            End If
 
             If Not newShp Is Nothing Then
 
@@ -423,6 +402,7 @@ Private Sub CopyTemplateShapes(ByVal ws As Worksheet, _
             End If
 
             Set newShp = Nothing
+            Set pastedShapes = Nothing
 
             On Error GoTo 0
 
