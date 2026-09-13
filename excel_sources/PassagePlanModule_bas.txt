@@ -159,25 +159,25 @@ Public Sub UpdatePassagePlan()
                       + (recordIndex Mod DATA_ROWS)
 
             wsP.Range("AT" & destRow).Formula = _
-                "=IF(DATA!A" & dataRow & "="""","""",DATA!A" & dataRow & ")"
+                "=IFERROR(IF(DATA!A" & dataRow & "="""","""",DATA!A" & dataRow & "),"""")"
 
             wsP.Range("G" & destRow).Formula = _
-                "=IF(DATA!B" & dataRow & "="""","""",DATA!B" & dataRow & ")"
+                "=IFERROR(IF(DATA!B" & dataRow & "="""","""",DATA!B" & dataRow & "),"""")"
 
             wsP.Range("L" & destRow).Formula = _
-                "=IF(DATA!C" & dataRow & "="""","""",DATA!C" & dataRow & ")"
+                "=IFERROR(IF(DATA!C" & dataRow & "="""","""",DATA!C" & dataRow & "),"""")"
 
             wsP.Range("Q" & destRow).Formula = _
-                "=IF(DATA!E" & dataRow & "="""","""",DATA!E" & dataRow & ")"
+                "=IFERROR(IF(DATA!E" & dataRow & "="""","""",DATA!E" & dataRow & "),"""")"
 
             wsP.Range("T" & destRow).Formula = _
-                "=IF(DATA!D" & dataRow & "="""","""",DATA!D" & dataRow & ")"
+                "=IFERROR(IF(DATA!D" & dataRow & "="""","""",DATA!D" & dataRow & "),"""")"
 
             wsP.Range("AB" & destRow).Formula = _
-                "=IF(DATA!F" & dataRow & "="""","""",DATA!F" & dataRow & ")"
+                "=IFERROR(IF(DATA!F" & dataRow & "="""","""",DATA!F" & dataRow & "),"""")"
 
             wsP.Range("X" & destRow).Formula = _
-                "=IF(DATA!G" & dataRow & "="""","""",DATA!G" & dataRow & ")"
+                "=IFERROR(IF(DATA!G" & dataRow & "="""","""",DATA!G" & dataRow & "),"""")"
 
             recordIndex = recordIndex + 1
 

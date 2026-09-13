@@ -26,3 +26,5 @@ Updated file: `NEW_FINAL_LOGO_EXACT_5_05x1_00cm.xlsm` and copy `PasPlan_NORDLAND
 - `PassagePlanModule_bas.txt` includes `DATA!G -> PLAN!X` mapping and clears `X` in `ClearMappedCells`.
 - `PassagePlanModule_bas.txt` message boxes use readable English strings (`Done/Error`) to avoid mojibake.
 - `PassagePlanModule_bas.txt` row-counting logic is updated to use route column `B` and normalize `CHAR(160)` as empty.
+- `PassagePlanModule_bas.txt` transfer formulas are wrapped with `IFERROR` to prevent DATA formula errors from surfacing in PLAN output rows.
+- `Лист2_cls.txt` limits auto-refresh scope to the active route area and skips very large edits for better data-entry performance.
