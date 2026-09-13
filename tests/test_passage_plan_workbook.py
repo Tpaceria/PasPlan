@@ -18,6 +18,17 @@ def find(root, path):
 
 
 class PassagePlanWorkbookTests(unittest.TestCase):
+    def rebuild_print_area(self, template_print_area, pages, page_rows=46):
+        parts = []
+        for area in template_print_area.split(","):
+            start, end = area.replace("'Plan list'!", "").split(":")
+            start_col, start_row = re.match(r"\$?([A-Z]+)\$?(\d+)", start).groups()
+            end_col, end_row = re.match(r"\$?([A-Z]+)\$?(\d+)", end).groups()
+            parts.append(
+                f"${start_col}${start_row}:${'$'}{end_col}${int(end_row) + (pages - 1) * page_rows}"
+            )
+        return ",".join(parts)
+
     def test_initial_state_is_single_plan_page(self):
         for workbook in WORKBOOKS:
             with self.subTest(workbook=workbook.name), zipfile.ZipFile(workbook) as archive:
@@ -35,6 +46,20 @@ class PassagePlanWorkbookTests(unittest.TestCase):
 
                 rows = [int(row.attrib["r"]) for row in find(plan_xml, "x:sheetData").findall("x:row", NS)]
                 self.assertEqual(max(rows), 46)
+
+    def test_template_print_area_expands_cleanly_for_multiple_pages(self):
+        for workbook in WORKBOOKS:
+            with self.subTest(workbook=workbook.name), zipfile.ZipFile(workbook) as archive:
+                workbook_xml = ET.fromstring(archive.read("xl/workbook.xml"))
+                template_area = next(
+                    node.text
+                    for node in workbook_xml.findall("x:definedNames/x:definedName", NS)
+                    if node.attrib.get("name") == "_xlnm.Print_Area"
+                )
+                self.assertEqual(
+                    self.rebuild_print_area(template_area, pages=3),
+                    "$A$1:$BN$138",
+                )
 
     def test_initial_data_template_is_empty_but_keeps_helper_formulas(self):
         for workbook in WORKBOOKS:

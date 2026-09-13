@@ -70,11 +70,20 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
     Dim oldCalc As XlCalculation
     Dim oldEvents As Boolean
     Dim oldScreenUpdating As Boolean
+    Dim templatePrintArea As String
+    Dim templateArea As Range
+    Dim rebuiltPrintArea As String
+    Dim areaFirstCol As String
+    Dim areaLastCol As String
+    Dim listSeparator As String
+    Dim areaTopRow As Long
+    Dim areaBottomRow As Long
 
     On Error GoTo ErrHandler
 
     Set wsP = ThisWorkbook.Worksheets(PLAN_SHEET)
     Set wsD = ThisWorkbook.Worksheets(DATA_SHEET)
+    templatePrintArea = wsP.PageSetup.PrintArea
 
     oldCalc = Application.Calculation
     oldEvents = Application.EnableEvents
@@ -149,7 +158,33 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
         wsP.HPageBreaks.Add Before:=wsP.Rows(p * PAGE_ROWS + 1)
     Next p
 
-    wsP.PageSetup.PrintArea = "$A$1:$BN$" & (pagesNeeded * PAGE_ROWS)
+    rebuiltPrintArea = ""
+    listSeparator = Application.International(xlListSeparator)
+
+    If Len(templatePrintArea) > 0 Then
+        For Each templateArea In wsP.Range(templatePrintArea).Areas
+            areaFirstCol = ExtractColumnLetters(templateArea.Cells(1, 1).Address(False, False))
+            areaLastCol = ExtractColumnLetters( _
+                templateArea.Cells(1, templateArea.Columns.Count).Address(False, False))
+            areaTopRow = templateArea.Row
+            areaBottomRow = areaTopRow + templateArea.Rows.Count - 1 + _
+                (pagesNeeded - 1) * PAGE_ROWS
+
+            If Len(areaFirstCol) > 0 And Len(areaLastCol) > 0 Then
+                If Len(rebuiltPrintArea) > 0 Then
+                    rebuiltPrintArea = rebuiltPrintArea & listSeparator
+                End If
+                rebuiltPrintArea = rebuiltPrintArea & _
+                    "$" & areaFirstCol & "$" & areaTopRow & ":$" & areaLastCol & "$" & areaBottomRow
+            End If
+        Next templateArea
+    End If
+
+    If Len(rebuiltPrintArea) = 0 Then
+        rebuiltPrintArea = "$A$1:$BN$" & (pagesNeeded * PAGE_ROWS)
+    End If
+
+    wsP.PageSetup.PrintArea = rebuiltPrintArea
     wsP.Calculate
 
     Application.Calculation = oldCalc
@@ -177,6 +212,24 @@ ErrHandler:
     End If
 
 End Sub
+
+
+Private Function ExtractColumnLetters(ByVal cellRef As String) As String
+
+    Dim i As Long
+    Dim ch As String
+    Dim s As String
+
+    For i = 1 To Len(cellRef)
+        ch = Mid$(cellRef, i, 1)
+        If ch Like "[A-Za-z]" Then
+            s = s & ch
+        End If
+    Next i
+
+    ExtractColumnLetters = UCase$(s)
+
+End Function
 
 
 Private Function CountDataRowsByColumnB(ByVal ws As Worksheet) As Long
