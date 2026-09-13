@@ -22,6 +22,9 @@ Updated file: `NEW_FINAL_LOGO_EXACT_5_05x1_00cm.xlsm` and copy `PasPlan_NORDLAND
 
 ## Extracted VBA review notes
 
+- `PassagePlanModule_bas.txt` now includes `Auto_Open` so the workbook refreshes PLAN pages to the current DATA size on open.
+- `Лист2_cls.txt` now watches the full editable DATA input range `A2:G600` so adds, updates, and deletions all trigger a PLAN rebuild.
+- Workbook templates now ship with a single PLAN page (`$A$1:$BN$46`) and DATA rows reset to helper formulas only, removing the old fixed five-page bootstrap.
 - `Лист2_cls.txt` reflects the event trigger range `A:G` so Min Depth edits also trigger refresh.
 - `PassagePlanModule_bas.txt` includes `DATA!G -> PLAN!X` mapping and clears `X` in `ClearMappedCells`.
 - `PassagePlanModule_bas.txt` message boxes use readable English strings (`Done/Error`) to avoid mojibake.

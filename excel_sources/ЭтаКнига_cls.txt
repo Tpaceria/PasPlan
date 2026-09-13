@@ -1,3 +1,0 @@
-in file: xl/vbaProject.bin - OLE stream: 'VBA/ЭтаКнига'
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-(empty macro)
