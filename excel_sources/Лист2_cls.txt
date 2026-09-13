@@ -1,0 +1,6 @@
+in file: xl/vbaProject.bin - OLE stream: 'VBA/Лист2'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Private Sub Worksheet_Change(ByVal Target As Range)
+    If Intersect(Target, Me.Range("A:F")) Is Nothing Then Exit Sub
+    UpdatePassagePlan
+End Sub

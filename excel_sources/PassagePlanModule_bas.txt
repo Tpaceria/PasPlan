@@ -1,0 +1,485 @@
+in file: xl/vbaProject.bin - OLE stream: 'VBA/PassagePlanModule'
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+Option Explicit
+
+' ============================================================
+' PASSAGE PLAN - FIXED3
+'
+' EXACT RULE:
+' Number of pages = CEILING(number of real DATA rows / 35)
+'
+' DATA rows are counted by COLUMN A only, starting at row 2.
+' Therefore:
+' 1-35   -> 1 page
+' 36-70  -> 2 pages
+' 71-105 -> 3 pages
+' 106-140 -> 4 pages
+'
+' Page layout:
+' rows 1-11  = header
+' rows 12-46 = 35 data rows
+' next page starts at row 47
+'
+' Mapping:
+' DATA A -> Plan list AT
+' DATA B -> Plan list G
+' DATA C -> Plan list L
+' DATA D -> Plan list T
+' DATA E -> Plan list Q
+' DATA F -> Plan list AB
+' ============================================================
+
+Public Sub UpdatePassagePlan()
+
+    Const PLAN_SHEET As String = "Plan list"
+    Const DATA_SHEET As String = "DATA"
+
+    Const PAGE_ROWS As Long = 46
+    Const DATA_ROWS As Long = 35
+    Const TEMPLATE_LAST_ROW As Long = 46
+    Const FIRST_DATA_ROW As Long = 12
+
+    Dim wsP As Worksheet
+    Dim wsD As Worksheet
+
+    Dim dataCount As Long
+    Dim pagesNeeded As Long
+
+    Dim p As Long
+    Dim destStart As Long
+    Dim oldLastRow As Long
+    Dim dataRow As Long
+    Dim destRow As Long
+
+    Dim oldCalc As XlCalculation
+
+    On Error GoTo ErrHandler
+
+    Set wsP = ThisWorkbook.Worksheets(PLAN_SHEET)
+    Set wsD = ThisWorkbook.Worksheets(DATA_SHEET)
+
+    oldCalc = Application.Calculation
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+
+    ' --------------------------------------------------------
+    ' 1. COUNT DATA ROWS
+    '
+    ' IMPORTANT:
+    ' Column A is the master column.
+    ' A2 = record 1
+    ' A3 = record 2
+    ' etc.
+    '
+    ' Empty cells/formulas returning "" are NOT counted.
+    ' --------------------------------------------------------
+    dataCount = CountDataRowsByColumnA(wsD)
+
+    ' Calculate pages.
+    If dataCount = 0 Then
+        pagesNeeded = 1
+    Else
+        pagesNeeded = (dataCount + DATA_ROWS - 1) \ DATA_ROWS
+    End If
+
+    ' --------------------------------------------------------
+    ' 2. COMPLETELY REMOVE ALL OLD PAGES AFTER PAGE 1
+    ' --------------------------------------------------------
+    oldLastRow = LastPlanRow(wsP)
+
+    If oldLastRow > TEMPLATE_LAST_ROW Then
+
+        ' Delete shapes/logos first.
+        DeleteShapesBelowRow wsP, TEMPLATE_LAST_ROW
+
+        ' Remove merged areas on old pages.
+        UnmergeBelowRow wsP, TEMPLATE_LAST_ROW
+
+        ' Now Excel can safely delete the old page rows.
+        wsP.Rows((TEMPLATE_LAST_ROW + 1) & ":" & oldLastRow).Delete
+
+    End If
+
+    ' Remove all old page breaks.
+    wsP.ResetAllPageBreaks
+
+    ' --------------------------------------------------------
+    ' 3. CREATE ONLY THE REQUIRED NUMBER OF PAGES
+    ' --------------------------------------------------------
+    For p = 2 To pagesNeeded
+
+        destStart = (p - 1) * PAGE_ROWS + 1
+
+        ' Copy complete first-page template.
+        wsP.Rows("1:46").Copy
+
+        wsP.Rows(destStart & ":" & _
+                 destStart + PAGE_ROWS - 1).PasteSpecial Paste:=xlPasteAll
+
+        Application.CutCopyMode = False
+
+        ' Copy row heights.
+        CopyRowHeights wsP, 1, 46, destStart
+
+        ' Set page number.
+        ' C5 is the page-number cell in the template.
+        On Error Resume Next
+        wsP.Range("C" & destStart + 4).Value = p
+        On Error GoTo ErrHandler
+
+        ' Copy only objects that belong to the first page.
+        CopyTemplateShapes wsP, destStart
+
+    Next p
+
+    ' --------------------------------------------------------
+    ' 4. CLEAR DATA CELLS ON REQUIRED PAGES
+    ' --------------------------------------------------------
+    ClearMappedCells wsP, pagesNeeded
+
+    ' --------------------------------------------------------
+    ' 5. WRITE DATA
+    ' --------------------------------------------------------
+    ' Since DATA column A determines the record number,
+    ' rows are transferred sequentially.
+    '
+    ' If A is empty, the row is skipped.
+    ' --------------------------------------------------------
+    Dim recordIndex As Long
+    recordIndex = 0
+
+    For dataRow = 2 To LastDataRowInA(wsD)
+
+        If HasRealValue(wsD.Cells(dataRow, 1)) Then
+
+            destRow = (recordIndex \ DATA_ROWS) * PAGE_ROWS _
+                      + FIRST_DATA_ROW _
+                      + (recordIndex Mod DATA_ROWS)
+
+            wsP.Range("AT" & destRow).Formula = _
+                "=IF(DATA!A" & dataRow & "="""","""",DATA!A" & dataRow & ")"
+
+            wsP.Range("G" & destRow).Formula = _
+                "=IF(DATA!B" & dataRow & "="""","""",DATA!B" & dataRow & ")"
+
+            wsP.Range("L" & destRow).Formula = _
+                "=IF(DATA!C" & dataRow & "="""","""",DATA!C" & dataRow & ")"
+
+            wsP.Range("Q" & destRow).Formula = _
+                "=IF(DATA!E" & dataRow & "="""","""",DATA!E" & dataRow & ")"
+
+            wsP.Range("T" & destRow).Formula = _
+                "=IF(DATA!D" & dataRow & "="""","""",DATA!D" & dataRow & ")"
+
+            wsP.Range("AB" & destRow).Formula = _
+                "=IF(DATA!F" & dataRow & "="""","""",DATA!F" & dataRow & ")"
+
+            recordIndex = recordIndex + 1
+
+        End If
+
+    Next dataRow
+
+    ' --------------------------------------------------------
+    ' 6. PAGE BREAKS
+    ' --------------------------------------------------------
+    wsP.ResetAllPageBreaks
+
+    For p = 1 To pagesNeeded - 1
+        wsP.HPageBreaks.Add Before:=wsP.Rows(p * PAGE_ROWS + 1)
+    Next p
+
+    ' --------------------------------------------------------
+    ' 7. PRINT AREA
+    ' --------------------------------------------------------
+    wsP.PageSetup.PrintArea = _
+        "$A$1:$BN$" & (pagesNeeded * PAGE_ROWS)
+
+    Application.CalculateFull
+
+    Application.Calculation = oldCalc
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+
+    MsgBox "Р“РѕС‚РѕРІРѕ." & vbCrLf & vbCrLf & _
+           "Р—Р°РїРѕР»РЅРµРЅРЅС‹С… СЃС‚СЂРѕРє DATA: " & dataCount & vbCrLf & _
+           "РЎС‚СЂР°РЅРёС†: " & pagesNeeded, _
+           vbInformation, "Passage Plan"
+
+    Exit Sub
+
+ErrHandler:
+
+    Application.Calculation = oldCalc
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.CutCopyMode = False
+
+    MsgBox "РћС€РёР±РєР°: " & Err.Description, _
+           vbExclamation, "Passage Plan"
+
+End Sub
+
+
+' ============================================================
+' COUNT DATA ROWS USING COLUMN A
+' ============================================================
+Private Function CountDataRowsByColumnA(ByVal ws As Worksheet) As Long
+
+    Dim lastRow As Long
+    Dim r As Long
+    Dim n As Long
+
+    lastRow = LastDataRowInA(ws)
+
+    For r = 2 To lastRow
+
+        If HasRealValue(ws.Cells(r, 1)) Then
+            n = n + 1
+        End If
+
+    Next r
+
+    CountDataRowsByColumnA = n
+
+End Function
+
+
+' ============================================================
+' LAST DATA ROW IN COLUMN A
+' ============================================================
+Private Function LastDataRowInA(ByVal ws As Worksheet) As Long
+
+    Dim r As Long
+
+    r = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+
+    If r < 2 Then
+        LastDataRowInA = 1
+    Else
+        LastDataRowInA = r
+    End If
+
+End Function
+
+
+' ============================================================
+' REAL VALUE CHECK
+' ============================================================
+Private Function HasRealValue(ByVal cell As Range) As Boolean
+
+    Dim v As Variant
+
+    v = cell.Value2
+
+    If IsError(v) Then
+        HasRealValue = True
+        Exit Function
+    End If
+
+    If Len(Trim$(CStr(v))) > 0 Then
+        HasRealValue = True
+    Else
+        HasRealValue = False
+    End If
+
+End Function
+
+
+' ============================================================
+' LAST USED ROW ON PLAN LIST
+' ============================================================
+Private Function LastPlanRow(ByVal ws As Worksheet) As Long
+
+    Dim f As Range
+
+    Set f = ws.Cells.Find( _
+        What:="*", _
+        After:=ws.Range("A1"), _
+        LookIn:=xlFormulas, _
+        LookAt:=xlPart, _
+        SearchOrder:=xlByRows, _
+        SearchDirection:=xlPrevious, _
+        MatchCase:=False)
+
+    If f Is Nothing Then
+        LastPlanRow = 46
+    Else
+        LastPlanRow = f.Row
+    End If
+
+End Function
+
+
+' ============================================================
+' UNMERGE OLD PAGES
+' ============================================================
+Private Sub UnmergeBelowRow(ByVal ws As Worksheet, _
+                            ByVal firstPageLastRow As Long)
+
+    Dim i As Long
+    Dim area As Range
+    Dim topRow As Long
+    Dim bottomRow As Long
+
+    For i = ws.UsedRange.MergeAreas.Count To 1 Step -1
+
+        Set area = Nothing
+
+        On Error Resume Next
+        Set area = ws.UsedRange.MergeAreas(i)
+        On Error GoTo 0
+
+        If Not area Is Nothing Then
+
+            topRow = area.Row
+            bottomRow = area.Row + area.Rows.Count - 1
+
+            If topRow > firstPageLastRow Or _
+               bottomRow > firstPageLastRow Then
+
+                area.UnMerge
+
+            End If
+
+        End If
+
+    Next i
+
+End Sub
+
+
+' ============================================================
+' DELETE OLD SHAPES / LOGOS
+' ============================================================
+Private Sub DeleteShapesBelowRow(ByVal ws As Worksheet, _
+                                 ByVal firstPageLastRow As Long)
+
+    Dim i As Long
+    Dim r As Long
+
+    For i = ws.Shapes.Count To 1 Step -1
+
+        r = 0
+
+        On Error Resume Next
+        r = ws.Shapes(i).TopLeftCell.Row
+        On Error GoTo 0
+
+        If r > firstPageLastRow Then
+            ws.Shapes(i).Delete
+        End If
+
+    Next i
+
+End Sub
+
+
+' ============================================================
+' COPY FIRST-PAGE SHAPES
+' ============================================================
+Private Sub CopyTemplateShapes(ByVal ws As Worksheet, _
+                               ByVal destinationFirstRow As Long)
+
+    Dim originalCount As Long
+    Dim i As Long
+
+    Dim shp As Shape
+    Dim newShp As Shape
+
+    Dim rowOffset As Double
+
+    originalCount = ws.Shapes.Count
+
+    rowOffset = ws.Rows(destinationFirstRow).Top - ws.Rows(1).Top
+
+    For i = 1 To originalCount
+
+        Set shp = ws.Shapes(i)
+
+        If shp.TopLeftCell.Row >= 1 And _
+           shp.TopLeftCell.Row <= 46 Then
+
+            On Error Resume Next
+
+            shp.Copy
+            Set newShp = ws.Shapes.Paste
+
+            If Not newShp Is Nothing Then
+
+                newShp.Top = shp.Top + rowOffset
+                newShp.Left = shp.Left
+                newShp.Width = shp.Width
+                newShp.Height = shp.Height
+                newShp.Rotation = shp.Rotation
+                newShp.LockAspectRatio = shp.LockAspectRatio
+
+            End If
+
+            Set newShp = Nothing
+
+            On Error GoTo 0
+
+        End If
+
+    Next i
+
+End Sub
+
+
+' ============================================================
+' COPY ROW HEIGHTS
+' ============================================================
+Private Sub CopyRowHeights(ByVal ws As Worksheet, _
+                           ByVal sourceFirstRow As Long, _
+                           ByVal sourceLastRow As Long, _
+                           ByVal destinationFirstRow As Long)
+
+    Dim r As Long
+    Dim d As Long
+
+    For r = sourceFirstRow To sourceLastRow
+
+        d = destinationFirstRow + r - sourceFirstRow
+
+        ws.Rows(d).RowHeight = ws.Rows(r).RowHeight
+
+    Next r
+
+End Sub
+
+
+' ============================================================
+' CLEAR MAPPED CELLS
+' ============================================================
+Private Sub ClearMappedCells(ByVal ws As Worksheet, _
+                             ByVal pagesNeeded As Long)
+
+    Const PAGE_ROWS As Long = 46
+    Const FIRST_DATA_ROW As Long = 12
+    Const DATA_ROWS As Long = 35
+
+    Dim p As Long
+    Dim r As Long
+    Dim targetRow As Long
+
+    For p = 0 To pagesNeeded - 1
+
+        For r = 0 To DATA_ROWS - 1
+
+            targetRow = p * PAGE_ROWS + FIRST_DATA_ROW + r
+
+            ws.Range("G" & targetRow).ClearContents
+            ws.Range("L" & targetRow).ClearContents
+            ws.Range("Q" & targetRow).ClearContents
+            ws.Range("T" & targetRow).ClearContents
+            ws.Range("AB" & targetRow).ClearContents
+            ws.Range("AT" & targetRow).ClearContents
+
+        Next r
+
+    Next p
+
+End Sub
