@@ -29,3 +29,4 @@ Updated file: `NEW_FINAL_LOGO_EXACT_5_05x1_00cm.xlsm` and copy `PasPlan_NORDLAND
 - `PassagePlanModule_bas.txt` transfer formulas are wrapped with `IFERROR` to prevent DATA formula errors from surfacing in PLAN output rows.
 - `Лист2_cls.txt` limits auto-refresh scope to only populated route rows and skips very large edits for better data-entry performance.
 - `PassagePlanModule_bas.txt` recalculates only PLAN scope (`wsP.Calculate`) instead of full Excel recalculation, and restores `EnableEvents` to its prior state after execution.
+- `Лист2_cls.txt` invokes the refresh macro via `Application.Run` scoped to `ThisWorkbook` to avoid cross-workbook dispatch ambiguity.

@@ -101,7 +101,7 @@ Public Sub UpdatePassagePlan(Optional ByVal Silent As Boolean = False)
         DeleteShapesBelowRow wsP, TEMPLATE_LAST_ROW
 
         ' Remove merged areas on old pages.
-        UnmergeBelowRow wsP, TEMPLATE_LAST_ROW
+        UnmergeBelowRow wsP, TEMPLATE_LAST_ROW, oldLastRow
 
         ' Now Excel can safely delete the old page rows.
         wsP.Rows((TEMPLATE_LAST_ROW + 1) & ":" & oldLastRow).Delete
@@ -323,9 +323,12 @@ End Function
 ' UNMERGE OLD PAGES
 ' ============================================================
 Private Sub UnmergeBelowRow(ByVal ws As Worksheet, _
-                            ByVal firstPageLastRow As Long)
+                            ByVal firstPageLastRow As Long, _
+                            ByVal lastPlanRow As Long)
 
-    ws.Rows((firstPageLastRow + 1) & ":" & ws.Rows.Count).UnMerge
+    If lastPlanRow <= firstPageLastRow Then Exit Sub
+
+    ws.Rows((firstPageLastRow + 1) & ":" & lastPlanRow).UnMerge
 
 End Sub
 
